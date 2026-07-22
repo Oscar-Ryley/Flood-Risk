@@ -1,0 +1,41 @@
+# Flood Risk Exposure Mapping for Energy Resources
+
+> Combining flood, terrain and energy-asset data to map the exposure of substations and distributed energy resources in the Durham area, supported by a reproducible data and visualisation workflow.
+
+| Project Overview & Team |
+| :--- |
+| EPSRC-funded [Vacation Internship](https://www.ukri.org/what-we-do/developing-people-and-skills/research-skills-initiatives/apprenticeships-internships-and-placements/internships-and-placements/) Project |
+| Associated with the UKRI grant: "Satellite-Aided Technologies for advancing resilience - Guarding energy services under climate hazards, risks, and disasters (SAT-Guard)" [UKRI Gateway](https://gtr.ukri.org/projects?ref=MR%2FZ50578X%2F1) |
+| Student Research Associates: [Isabelle Servonat][servonat], [Oscar Ryley][ryley] |
+| Supervisors: [Prof. Hongjian Sun][sun], [Dr Wenzhu Li][li], and [Dr Misael Alpizar Santana][santana] |
+
+[servonat]: #
+[ryley]: https://oryley.com/
+[sun]: https://www.durham.ac.uk/staff/hongjian-sun/
+[li]: https://www.durham.ac.uk/staff/wenzhu-li/
+[santana]: https://www.durham.ac.uk/staff/misael-alpizar-santana/
+
+
+> ## Initial Data Sources
+> - Northern Power Grid: [Open Data Portal](https://northernpowergrid.opendatasoft.com/explore/?disjunctive.theme&disjunctive.keyword&sort=modified)
+> - Renewable: [Renewables.ninja](https://www.renewables.ninja/)
+> - Hazard-Energy: [Hazard-Energy Interrelationship Matrix](https://tageleaschale.shinyapps.io/deploy-app-3/)
+> - Past Weather Events: [Met Office, Past Weather Events](https://weather.metoffice.gov.uk/learn-about/past-uk-weather-events)
+> - Flood Risk Map: [Environment Agency, Risk of Flooding from Surface Water](https://environment.data.gov.uk/dataset/b5aaa28d-6eb9-460e-8d6f-43caa71fbe0e)
+> - NASA Earth Data: [earthdata.nasa.gov](https://www.earthdata.nasa.gov/)
+
+
+## Citation
+
+**BibTeX:**
+```bibtex
+@misc{servonat_ryley_2026_floodrisk,
+  author       = {Servonat, Isabelle and Ryley, Oscar and Sun, Hongjian and Li, Wenzhu and Alpizar Santana, Misael},
+  title        = {Flood Risk Exposure Mapping for Energy Resources in the Durham Area},
+  year         = {2026},
+  publisher    = {GitHub},
+  journal      = {GitHub Repository},
+  howpublished = {\url{https://github.com/oscar-ryley/flood-risk-exposure}},
+  note         = {EPSRC Vacation Internship Project, Associated with UKRI Grant MR/Z50578X/1}
+}
+```
