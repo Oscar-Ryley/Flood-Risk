@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flood Risk Exposure</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="data/images/favicon.png" />
+
+    <!-- CSS Stylesheets -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+    <!-- Navbar -->
+    <header id="header">
+        <h3 class="title">Northern Powergrid Substations in County Durham</h3>
+        <span id="counter" class="badge">Loading Map...</span>
+    </header>
+
+    <!-- Map Container -->
+    <main id="map"></main>
+
+    <!-- Third-Party JS Libraries -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+
+    <script src="app.js"></script>
+
+</body>
+</html>
