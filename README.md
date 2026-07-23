@@ -16,13 +16,28 @@
 [santana]: https://www.durham.ac.uk/staff/misael-alpizar-santana/
 
 
-> ## Initial Data Sources
+## Data
+
+> ### Initial Sources
 > - Northern Power Grid: [Open Data Portal](https://northernpowergrid.opendatasoft.com/explore/?disjunctive.theme&disjunctive.keyword&sort=modified)
 > - Renewable: [Renewables.ninja](https://www.renewables.ninja/)
 > - Hazard-Energy: [Hazard-Energy Interrelationship Matrix](https://tageleaschale.shinyapps.io/deploy-app-3/)
 > - Past Weather Events: [Met Office, Past Weather Events](https://weather.metoffice.gov.uk/learn-about/past-uk-weather-events)
 > - Flood Risk Map: [Environment Agency, Risk of Flooding from Surface Water](https://environment.data.gov.uk/dataset/b5aaa28d-6eb9-460e-8d6f-43caa71fbe0e)
 > - NASA Earth Data: [earthdata.nasa.gov](https://www.earthdata.nasa.gov/)
+
+
+### 📁 Directory Structure
+
+```text
+data/
+├── images/
+├── substation_sites_list.geojson
+└── county_durham.geojson
+```
+
+- `substation_sites_list.geojson`: [Northern Power Grid Open Data](https://northernpowergrid.opendatasoft.com/explore/dataset/substation_sites_list/export/?disjunctive.dno_area)
+- `county_durham.geojson`: [MapIt Durham County Council Area - ID 2223](https://mapit.mysociety.org/area/2223.geojson) <i>(renamed from `2223.geojson`)</i>
 
 
 ## Citation
