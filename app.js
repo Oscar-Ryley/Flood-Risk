@@ -103,6 +103,23 @@ async function initMap() {
             map.fitBounds(boundaryGroup.getBounds().pad(0.05));
         }
 
+        // Risk of Flooding from Surface Water Data added ontop of the map as a png
+        const surfaceWaterFloodLayer = L.tileLayer.wms(
+            'https://environment.data.gov.uk/spatialdata/nafra2-risk-of-flooding-from-surface-water/wms', 
+            {
+                layers: 'rofsw',
+                format: 'image/png',
+                transparent: true,
+                opacity: 0.8,
+                attribution: '&copy; Environment Agency',
+                
+                minZoom: 6,
+                maxZoom: 19,
+                maxNativeZoom: 15    // Stretches images at closer zoom levels
+            }
+        ).addTo(map); 
+
+
     } catch (err) {
         console.error("Map setup failed:", err);
         document.getElementById('counter').innerText = err.message;
