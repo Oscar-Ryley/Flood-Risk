@@ -2,9 +2,8 @@
 
 > Combining flood, terrain and energy-asset data to map the exposure of substations and distributed energy resources in the Durham area, supported by a reproducible data and visualisation workflow.
 
-| Project Overview & Team |
-| :--- |
 | EPSRC-funded [Vacation Internship](https://www.ukri.org/what-we-do/developing-people-and-skills/research-skills-initiatives/apprenticeships-internships-and-placements/internships-and-placements/) Project |
+| :--- |
 | Associated with the UKRI grant: "Satellite-Aided Technologies for advancing resilience - Guarding energy services under climate hazards, risks, and disasters (SAT-Guard)" [UKRI Gateway](https://gtr.ukri.org/projects?ref=MR%2FZ50578X%2F1) |
 | Student Research Associates: [Isabelle Servonat][servonat], [Oscar Ryley][ryley] |
 | Supervisors: [Prof. Hongjian Sun][sun], [Dr Wenzhu Li][li], and [Dr Misael Alpizar Santana][santana] |
@@ -18,7 +17,7 @@
 
 ## Live Site - [powergrid.oryley.com](https://powergrid.oryley.com)
 
-[![alt text](data/images/screenshot.png)](https://powergrid.oryley.com)
+[![alt text](public/data/images/screenshot.png)](https://powergrid.oryley.com)
 
 
 ## Data

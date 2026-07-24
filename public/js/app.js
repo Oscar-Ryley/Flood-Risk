@@ -11,8 +11,8 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 const boundaryGroup = L.featureGroup().addTo(map);
 const markerGroup = L.featureGroup().addTo(map);
 
-const durhamGeoJsonPath = 'data/county_durham.geojson';
-const substationsGeoJsonPath = 'data/substation_sites_list.geojson';
+const durhamGeoJsonPath = 'public/data/county_durham.geojson';
+const substationsGeoJsonPath = 'public/data/substation_sites_list.geojson';
 
 async function initMap() {
     try {
