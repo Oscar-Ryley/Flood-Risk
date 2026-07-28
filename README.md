@@ -23,11 +23,9 @@
 ## Data
 
 > ### Initial Sources
-> - Northern Power Grid: [Open Data Portal](https://northernpowergrid.opendatasoft.com/explore/?disjunctive.theme&disjunctive.keyword&sort=modified)
 > - Renewable: [Renewables.ninja](https://www.renewables.ninja/)
 > - Hazard-Energy: [Hazard-Energy Interrelationship Matrix](https://tageleaschale.shinyapps.io/deploy-app-3/)
 > - Past Weather Events: [Met Office, Past Weather Events](https://weather.metoffice.gov.uk/learn-about/past-uk-weather-events)
-> - Flood Risk Map: [Environment Agency, Risk of Flooding from Surface Water](https://environment.data.gov.uk/dataset/b5aaa28d-6eb9-460e-8d6f-43caa71fbe0e)
 > - NASA Earth Data: [earthdata.nasa.gov](https://www.earthdata.nasa.gov/)
 
 
@@ -47,8 +45,19 @@ data/
 ### ⚡Dynamic Data
 
 - **Live Power Cut Data**: Northern Powergrid's [OpenDataSoft API](https://northernpowergrid.opendatasoft.com/explore/dataset/live-power-cuts-data/information/)
-
 - **Risk of Flooding from Surface Water Map**: Environment Agency [Web Map Service (WMS)](https://environment.data.gov.uk/dataset/b5aaa28d-6eb9-460e-8d6f-43caa71fbe0e)
+
+
+### 🧪 Reproducibility
+
+- Live site is currently available at [powergrid.oryley.com](https://powergrid.oryley.com)
+- Static Data downloads can be found in [Directory Structure](#-directory-structure)
+- To use this visualisation locally, clone this repository, and run using a local test server
+
+```bash
+git clone https://github.com/Oscar-Ryley/Flood-Risk-Exposure.git
+cd Flood-Risk-Exposure
+```
 
 
 ## Citation
