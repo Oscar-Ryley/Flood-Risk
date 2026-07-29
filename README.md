@@ -8,7 +8,7 @@
 | Student Research Associates: [Isabelle Servonat][servonat], [Oscar Ryley][ryley] |
 | Supervisors: [Prof. Hongjian Sun][sun], [Dr Wenzhu Li][li], and [Dr Misael Alpizar Santana][santana] |
 
-[servonat]: #
+[servonat]: https://www.linkedin.com/in/isabelleservonat/
 [ryley]: https://oryley.com/
 [sun]: https://www.durham.ac.uk/staff/hongjian-sun/
 [li]: https://www.durham.ac.uk/staff/wenzhu-li/
