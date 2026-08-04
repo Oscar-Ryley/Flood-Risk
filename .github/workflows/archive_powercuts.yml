@@ -1,0 +1,41 @@
+name: Archive Live Power Cuts from Northern Power Grid
+
+on:
+  schedule:
+    - cron: '0,30 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  fetch-and-archive:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Fetch and append live GeoJSON power cuts
+        run: |
+          python scripts/archive_powercuts.py
+        env:
+          POWERCUT_ARCHIVE_PATH: public/data/powercut_archive.geojson
+
+      - name: Commit and push archive
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add public/data/powercut_archive.geojson
+
+          if git diff --cached --quiet; then
+            echo "No changes to commit."
+            exit 0
+          fi
+
+          git commit -m "github-action: Power Cut archive updated on $(date -u +'%Y-%m-%d %H:%M:%S') UTC"
+          git push
