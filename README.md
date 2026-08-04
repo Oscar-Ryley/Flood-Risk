@@ -17,12 +17,12 @@
 
 ## Live Site - [powergrid.oryley.com](https://powergrid.oryley.com)
 
-[![alt text](public/data/images/screenshot.png)](https://powergrid.oryley.com)
+[![Live Site Screenshot](public/data/images/screenshot.png)](https://powergrid.oryley.com)
 
 
 ## Data
 
-> ### Initial Sources
+> ### Initial Sources (not yet used)
 > - Renewable: [Renewables.ninja](https://www.renewables.ninja/)
 > - Hazard-Energy: [Hazard-Energy Interrelationship Matrix](https://tageleaschale.shinyapps.io/deploy-app-3/)
 > - Past Weather Events: [Met Office, Past Weather Events](https://weather.metoffice.gov.uk/learn-about/past-uk-weather-events)
@@ -34,15 +34,17 @@
 ```text
 data/
 ├── images/
-├── substation_sites_list.geojson
-└── county_durham.geojson
+├── county_durham.geojson
+├── powercut_archive.geojson
+└── substation_sites_list.geojson
 ```
 
 - `substation_sites_list.geojson`: [Northern Power Grid Open Data](https://northernpowergrid.opendatasoft.com/explore/dataset/substation_sites_list/export/?disjunctive.dno_area)
 - `county_durham.geojson`: [MapIt Durham County Council Area - ID 2223](https://mapit.mysociety.org/area/2223.geojson) <i>(renamed from `2223.geojson`)</i>
+- `powercut_archive.geojson`: Updated every 30 minutes by a GitHub Action that calls Northern Powergrid's [OpenDataSoft API](https://northernpowergrid.opendatasoft.com/explore/dataset/live-power-cuts-data/information/). Each run appends a new line, which is a timestamped GeoJSON snapshot.
 
 
-### ⚡Dynamic Data
+### ⚡ Dynamic Data
 
 - **Live Power Cut Data**: Northern Powergrid's [OpenDataSoft API](https://northernpowergrid.opendatasoft.com/explore/dataset/live-power-cuts-data/information/)
 - **Risk of Flooding from Surface Water Map**: Environment Agency [Web Map Service (WMS)](https://environment.data.gov.uk/dataset/b5aaa28d-6eb9-460e-8d6f-43caa71fbe0e)
@@ -52,11 +54,12 @@ data/
 
 - Live site is currently available at [powergrid.oryley.com](https://powergrid.oryley.com)
 - Static Data downloads can be found in [Directory Structure](#-directory-structure)
+- A GitHub Actions workflow is archiving live Northern Power Grid power cut data to the repository. To create snapshots locally, run `scripts/archive_powercuts.py` and it will update `data/powercut_archive.geojson`
 - To use this visualisation locally, clone this repository, and run using a local test server
 
 ```bash
-git clone https://github.com/Oscar-Ryley/Flood-Risk-Exposure.git
-cd Flood-Risk-Exposure
+git clone https://github.com/Oscar-Ryley/Flood-Risk.git
+cd Flood-Risk
 ```
 
 
@@ -70,7 +73,7 @@ cd Flood-Risk-Exposure
   year         = {2026},
   publisher    = {GitHub},
   journal      = {GitHub Repository},
-  howpublished = {\url{https://github.com/oscar-ryley/flood-risk-exposure}},
+  howpublished = {\url{https://github.com/oscar-ryley/flood-risk}},
   note         = {EPSRC Vacation Internship Project, Associated with UKRI Grant MR/Z50578X/1}
 }
 ```
