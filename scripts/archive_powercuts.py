@@ -11,6 +11,7 @@ from urllib.request import Request, urlopen
 
 # Default data sources and paths
 URL = "https://northernpowergrid.opendatasoft.com/api/explore/v2.1/catalog/datasets/live-power-cuts-data/exports/geojson?lang=en&timezone=Europe%2FLondon"
+FLOOD_URL = "https://environment.data.gov.uk/flood-monitoring/id/floods.json"
 REPO_ROOT = Path(__file__).resolve().parents[1]
 ARCHIVE_PATH = REPO_ROOT / "public" / "data" / "powercut_archive.geojson"
 BOUNDARY_PATH = REPO_ROOT / "public" / "data" / "county_durham.geojson"
@@ -45,6 +46,27 @@ def fetch_snapshot(url: str) -> dict:
         raise ValueError("The downloaded payload was not a GeoJSON FeatureCollection")
 
     return payload
+
+
+def fetch_floods(url: str) -> dict:
+    # Download the current flood warnings feed from the Environment Agency
+    request = Request(url, headers={"Accept": "application/json"})
+    with urlopen(request, timeout=45) as response:
+        payload = json.load(response)
+
+    if not isinstance(payload, dict):
+        raise ValueError("The downloaded flood payload was not a JSON object")
+
+    items = payload.get("items")
+    if not isinstance(items, list) or not items:
+        return {}
+
+    floods = {"items": items}
+    meta = payload.get("meta")
+    if isinstance(meta, dict):
+        floods["meta"] = meta
+
+    return floods
 
 
 def load_boundary_geometries(path: Path):
@@ -166,7 +188,6 @@ def build_feature(feature: dict, incident_key: str) -> dict:
         if key in properties and properties[key] is not None:
             kept_properties[key] = properties[key]
 
-    kept_properties["archive_source"] = "Northern Power Grid"
     kept_properties["incident_key"] = incident_key
 
     return {
@@ -176,7 +197,7 @@ def build_feature(feature: dict, incident_key: str) -> dict:
     }
 
 
-def build_snapshot(snapshot: dict, captured_at: str, boundary_geometries=None) -> dict:
+def build_snapshot(snapshot: dict, captured_at: str, floods: dict, boundary_geometries=None) -> dict:
     # Create one snapshot containing all boundary-filtered features for this run
     archived_features = []
 
@@ -197,6 +218,7 @@ def build_snapshot(snapshot: dict, captured_at: str, boundary_geometries=None) -
     return {
         "type": "FeatureCollection",
         "captured_at": captured_at,
+        "floods": floods if floods else {},
         "features": archived_features,
     }
 
@@ -216,18 +238,20 @@ def main() -> None:
     # Load previous snapshots, fetch the latest feed
     snapshots = load_snapshots(ARCHIVE_PATH)
     snapshot = fetch_snapshot(URL)
+    floods = fetch_floods(FLOOD_URL)
     boundary_geometries = load_boundary_geometries(BOUNDARY_PATH)
     captured_at = datetime.now(timezone.utc).replace(microsecond=0).isoformat()
 
     # Build new snapshot
-    new_snapshot = build_snapshot(snapshot, captured_at, boundary_geometries)
+    new_snapshot = build_snapshot(snapshot, captured_at, floods, boundary_geometries)
     snapshots.append(new_snapshot)
     write_snapshots(ARCHIVE_PATH, snapshots)
 
     # Write update to console
     total_features = len(new_snapshot["features"])
+    total_flood_warnings = len(floods.get("items", [])) if isinstance(floods, dict) else 0
     print(f"Archived snapshot at {captured_at}, saved to {ARCHIVE_PATH}")
-    print(f"Latest snapshot has {total_features} total features. Total Snapshots: {len(snapshots)}")
+    print(f"Latest snapshot has {total_features} total features, {total_flood_warnings} flood warnings. Total Snapshots: {len(snapshots)}")
 
 
 if __name__ == "__main__":
