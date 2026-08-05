@@ -1,6 +1,6 @@
-# Flood Risk Exposure Mapping for Energy Resources
+# Flood Risk Prioritisation for Grid Assets
 
-> Combining flood, terrain and energy-asset data to map the exposure of substations and distributed energy resources in the Durham area, supported by a reproducible data and visualisation workflow.
+> Combining flood, terrain and energy-asset data to map the exposure of, screen, and prioritise substations and distributed energy resources (DERs) in County Durham for further study, supported by a reproducible data and visualisation workflow.
 
 | EPSRC-funded [Vacation Internship](https://www.ukri.org/what-we-do/developing-people-and-skills/research-skills-initiatives/apprenticeships-internships-and-placements/internships-and-placements/) Project |
 | :--- |
@@ -41,7 +41,7 @@ data/
 
 - `substation_sites_list.geojson`: [Northern Power Grid Open Data](https://northernpowergrid.opendatasoft.com/explore/dataset/substation_sites_list/export/?disjunctive.dno_area)
 - `county_durham.geojson`: [MapIt Durham County Council Area - ID 2223](https://mapit.mysociety.org/area/2223.geojson) <i>(renamed from `2223.geojson`)</i>
-- `powercut_archive.geojson`: Updated every 30 minutes by a GitHub Action that calls Northern Powergrid's [OpenDataSoft API](https://northernpowergrid.opendatasoft.com/explore/dataset/live-power-cuts-data/information/). Each run appends a new line, which is a timestamped GeoJSON snapshot.
+- `powercut_archive.geojson`: Updated every 30 minutes by a GitHub Action that calls Northern Powergrid's [OpenDataSoft API](https://northernpowergrid.opendatasoft.com/explore/dataset/live-power-cuts-data/information/) and flood warnings from [the Environment Agency](https://environment.data.gov.uk/flood-monitoring/id/floods). Each run appends a new line, which is a timestamped GeoJSON snapshot.
 
 
 ### ⚡ Dynamic Data
@@ -54,7 +54,7 @@ data/
 
 - Live site is currently available at [powergrid.oryley.com](https://powergrid.oryley.com)
 - Static Data downloads can be found in [Directory Structure](#-directory-structure)
-- A GitHub Actions workflow is archiving live Northern Power Grid power cut data to the repository. To create snapshots locally, run `scripts/archive_powercuts.py` and it will update `data/powercut_archive.geojson`
+- A GitHub Actions workflow is archiving live Northern Power Grid power cut data, with flood warnings, to the repository. To create snapshots locally, run `scripts/archive_powercuts.py` and it will update `data/powercut_archive.geojson`
 - To use this visualisation locally, clone this repository, and run using a local test server
 
 ```bash
