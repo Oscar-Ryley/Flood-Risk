@@ -52,25 +52,45 @@ body {
     background: #e74c3c;
 }
 
+.badge-black {
+    background: #000000;
+    color: #ffffff;
+}
+
 #map { 
     flex: 1; 
     width: 100%; 
 }
 
 .substation-marker {
-    fill: #0078d4;
     fill-opacity: 0.8;
     stroke: #ffffff;
     stroke-width: 1.5px;
     stroke-opacity: 1;
 }
+
+.leaflet-popup-content-wrapper {
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.leaflet-popup-content {
+    margin: 14px 16px;
+    width: auto !important;
+    max-width: 680px;
+    max-height: 75vh;
+    overflow-y: auto; 
+    overflow-x: hidden;  
+}
+
 .popup-content {
     font-family: inherit;
+    width: 100%;
 }
 
 .popup-content h4 {
-    margin: 0 0 8px 0;
-    font-size: 14px;
+    margin: 0 0 10px 0;
+    font-size: 15px;
 }
 
 .popup-content div {
@@ -83,11 +103,93 @@ body {
     color: #68246d;
 }
 
+.popup-substation-layout {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 16px;
+    align-items: start;
+}
+
+.popup-substation-main {
+    flex: 0 0 190px;
+    min-width: 170px;
+}
+
+
+.popup-csv-section {
+    flex: 1 1 360px;
+    margin-top: 0;
+    padding: 8px 10px;
+    border-left: 4px solid var(--risk-color);
+    background: var(--risk-background);
+    border-radius: 6px;
+    min-width: 0;
+}
+
+.popup-csv-title {
+    font-weight: 700;
+    color: var(--risk-color);
+    margin-bottom: 6px;
+    font-size: 13px;
+}
+
+
+.popup-csv-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px 12px;
+}
+
+.popup-csv-item {
+    min-width: 0;
+    margin-bottom: 0;
+    font-size: 11px;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+    word-break: break-word;  
+}
+
+@media (max-width: 640px) {
+    .popup-substation-main,
+    .popup-csv-section {
+        flex: 1 1 100%;
+    }
+
+    .popup-csv-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
 .popup-powercut {
-    border-left: 4px solid #e74c3c;
+    border-left: 4px solid #000000;
     padding-left: 10px;
 }
 
 .popup-powercut h4 {
-    color: #e74c3c;
+    color: #000000;
+}
+
+.popup-csv-scroll .leaflet-popup-content {
+    max-height: 280px; 
+}
+
+
+.popup-powercut {
+    border-left: 4px solid #000000;
+    padding-left: 12px;
+}
+
+.popup-powercut h4 {
+    color: #000000;
+    margin: 0 0 8px 0;
+    white-space: nowrap; 
+}
+
+
+.pc-row {
+    display: flex;
+    flex-direction: row;
+    gap: 3px;
+    margin-bottom: 5px;
+    white-space: nowrap;
 }
