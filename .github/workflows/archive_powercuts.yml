@@ -22,7 +22,7 @@ jobs:
 
       - name: Fetch and append live GeoJSON power cuts
         run: |
-          python scripts/archive_powercuts.py
+          python public/scripts/archive_powercuts.py
         env:
           POWERCUT_ARCHIVE_PATH: public/data/powercut_archive.geojson
 
