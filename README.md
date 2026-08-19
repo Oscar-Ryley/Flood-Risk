@@ -41,7 +41,7 @@ data/
 ```
 
 - `substation_sites_list.geojson`: [Northern Power Grid Open Data](https://northernpowergrid.opendatasoft.com/explore/dataset/substation_sites_list/export/?disjunctive.dno_area)
-- `substation_sites_filtered.csv`: 
+- `substation_sites_filtered.csv`: Risk Levels Classified as High (red), Medium (orange), Low (Green), and Unclassified (Blue).
 - `county_durham.geojson`: [MapIt Durham County Council Area - ID 2223](https://mapit.mysociety.org/area/2223.geojson) <i>(renamed from `2223.geojson`)</i>
 - `powercut_archive.geojson`: Updated every 30 minutes by a GitHub Action that calls Northern Powergrid's [OpenDataSoft API](https://northernpowergrid.opendatasoft.com/explore/dataset/live-power-cuts-data/information/) and flood warnings from [the Environment Agency](https://environment.data.gov.uk/flood-monitoring/id/floods). Each run appends a new line, which is a timestamped GeoJSON snapshot.
 
