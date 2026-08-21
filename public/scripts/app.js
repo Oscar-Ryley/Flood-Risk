@@ -10,6 +10,7 @@ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 // Feature groups
 const boundaryGroup = L.featureGroup().addTo(map);
 const markerGroup = L.featureGroup().addTo(map);
+const csvMarkerGroup = L.featureGroup().addTo(map);
 const powerCutGroup = L.featureGroup().addTo(map); 
 
 const durhamGeoJsonPath = 'public/data/county_durham.geojson';
@@ -250,6 +251,22 @@ function getSubstationPopupOptions(hasCsvData) {
     };
 }
 
+function createSubstationCsvIcon(fillColor, fillOpacity = 0.9) {
+    const starPath = 'M12 1.5 L14.7 8.2 L21.8 8.2 L16.1 12.8 L18.7 19.5 L12 15.2 L5.3 19.5 L7.9 12.8 L2.2 8.2 L9.3 8.2 Z';
+
+    return L.divIcon({
+        className: 'substation-marker-csv-icon',
+        html: `
+            <svg viewBox="0 0 24 24" width="18" height="18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+                <path d="${starPath}" fill="${fillColor}" fill-opacity="${fillOpacity}" stroke="#000000" stroke-width="1.5" stroke-linejoin="round"/>
+            </svg>
+        `,
+        iconSize: [18, 18],
+        iconAnchor: [9, 9],
+        popupAnchor: [0, -8]
+    });
+}
+
 async function initMap() {
     try {
         const boundaryResp = await fetch(durhamGeoJsonPath);
@@ -282,6 +299,7 @@ async function initMap() {
             : durhamData;
 
         markerGroup.clearLayers();
+        csvMarkerGroup.clearLayers();
         let count = 0;
 
         const features = substationsData.features || [];
@@ -306,37 +324,64 @@ async function initMap() {
                     const csvDetailsHtml = buildCsvDetailsHtml(csvRow);
                     const hasCsvData = Boolean(csvRow);
                     const markerFillColor = getSubstationMarkerColor(csvRow);
-                    const markerFillOpacity = markerFillColor === '#0078d4' ? 0.6 : 0.9;
+                    const markerFillOpacity = hasCsvData && markerFillColor === '#0078d4' ? 0.9 : 0.9;
 
-                const marker = L.circleMarker([lat, lon], {
-                    radius: 6,
-                    className: hasCsvData ? 'substation-marker substation-marker-csv' : 'substation-marker',
-                    fillColor: markerFillColor,
-                    color: '#ffffff',
-                    weight: 1.5,
-                    fillOpacity: markerFillOpacity
-                });
+                    const circleMarker = hasCsvData ? null : L.circleMarker([lat, lon], {
+                        radius: 6,
+                        className: 'substation-marker',
+                        fillColor: markerFillColor,
+                        color: '#ffffff',
+                        weight: 1.5,
+                        fillOpacity: markerFillColor === '#0078d4' ? 0.1 : markerFillOpacity
+                    });
 
-                // Substation Details Popup
-                marker.bindPopup(`
-                    <div class="popup-content popup-substation">
-                        <h4>${props.site_name || 'Unknown Substation'}</h4>
-                        <div class="popup-substation-layout">
-                            <div class="popup-substation-main">
-                                <div><b>ID:</b> ${props.substation_id || 'N/A'}</div>
-                                <div><b>Type:</b> ${props.site_type || 'N/A'}</div>
-                                <div><b>Voltage:</b> ${props.primary_voltage_kv ?? 'N/A'} kV / ${props.secondary_voltage_kv ?? 'N/A'} kV</div>
-                                <div><b>Rating:</b> ${props.transformer_rating_kva ?? 'N/A'} kVA</div>
-                                <div><b>Customers Fed:</b> ${props.customer_numbers || 'N/A'}</div>
-                                <div><b>Upstream:</b> ${props.upstream_substation || 'N/A'}</div>
-                                <div><b>Postcode:</b> ${props.postcode || 'N/A'}</div>
+                    const marker = hasCsvData ? L.marker([lat, lon], {
+                        icon: createSubstationCsvIcon(markerFillColor, markerFillOpacity)
+                    }) : null;
+
+                    // Substation Details Popup
+                    if (circleMarker) {
+                        circleMarker.bindPopup(`
+                            <div class="popup-content popup-substation">
+                                <h4>${props.site_name || 'Unknown Substation'}</h4>
+                                <div class="popup-substation-layout">
+                                    <div class="popup-substation-main">
+                                        <div><b>ID:</b> ${props.substation_id || 'N/A'}</div>
+                                        <div><b>Type:</b> ${props.site_type || 'N/A'}</div>
+                                        <div><b>Voltage:</b> ${props.primary_voltage_kv ?? 'N/A'} kV / ${props.secondary_voltage_kv ?? 'N/A'} kV</div>
+                                        <div><b>Rating:</b> ${props.transformer_rating_kva ?? 'N/A'} kVA</div>
+                                        <div><b>Customers Fed:</b> ${props.customer_numbers || 'N/A'}</div>
+                                        <div><b>Upstream:</b> ${props.upstream_substation || 'N/A'}</div>
+                                        <div><b>Postcode:</b> ${props.postcode || 'N/A'}</div>
+                                    </div>
+                                    ${csvDetailsHtml}
+                                </div>
                             </div>
-                            ${csvDetailsHtml}
-                        </div>
-                    </div>
-                `, getSubstationPopupOptions(hasCsvData));
+                        `, getSubstationPopupOptions(hasCsvData));
+                    }
 
-                markerGroup.addLayer(marker);
+                    if (marker) {
+                        marker.bindPopup(`
+                            <div class="popup-content popup-substation">
+                                <h4>${props.site_name || 'Unknown Substation'}</h4>
+                                <div class="popup-substation-layout">
+                                    <div class="popup-substation-main">
+                                        <div><b>ID:</b> ${props.substation_id || 'N/A'}</div>
+                                        <div><b>Type:</b> ${props.site_type || 'N/A'}</div>
+                                        <div><b>Voltage:</b> ${props.primary_voltage_kv ?? 'N/A'} kV / ${props.secondary_voltage_kv ?? 'N/A'} kV</div>
+                                        <div><b>Rating:</b> ${props.transformer_rating_kva ?? 'N/A'} kVA</div>
+                                        <div><b>Customers Fed:</b> ${props.customer_numbers || 'N/A'}</div>
+                                        <div><b>Upstream:</b> ${props.upstream_substation || 'N/A'}</div>
+                                        <div><b>Postcode:</b> ${props.postcode || 'N/A'}</div>
+                                    </div>
+                                    ${csvDetailsHtml}
+                                </div>
+                            </div>
+                        `, getSubstationPopupOptions(hasCsvData));
+                    }
+
+                    if (circleMarker) markerGroup.addLayer(circleMarker);
+                    if (marker) csvMarkerGroup.addLayer(marker);
                 }
             }
         });
@@ -385,16 +430,26 @@ async function fetchLivePowerCuts() {
         const url = 'https://northernpowergrid.opendatasoft.com/api/explore/v2.1/catalog/datasets/live-power-cuts-data/exports/geojson?lang=en&timezone=Europe%2FLondon';
         const response = await fetch(url);
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        
+
         const data = await response.json();
         powerCutGroup.clearLayers();
-        let activePowerCuts = 0; 
-        
+        let activePowerCuts = 0;
+
+        const livePowerCutIcon = L.divIcon({
+            className: 'live-power-cut-icon-wrapper',
+            html: `
+                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+                    <path d="M13 2L4 13h5l-1 9 9-11h-5l1-9z" fill="#ffd700" stroke="#daa000" stroke-width="1.5" stroke-linejoin="round"/>
+                </svg>
+            `,
+            iconSize: [22, 22],
+            iconAnchor: [11, 18],
+            popupAnchor: [0, -16]
+        });
+
         L.geoJSON(data, {
             filter: feature => feature.geometry?.coordinates && turf.booleanPointInPolygon(feature, durhamBoundary),
-            pointToLayer: (feature, latlng) => L.circleMarker(latlng, {
-                radius: 6, fillColor: '#000000', color: '#000000', weight: 1.5, opacity: 1, fillOpacity: 0.9, className: 'live-power-cut-marker'
-            }),
+            pointToLayer: (feature, latlng) => L.marker(latlng, { icon: livePowerCutIcon }),
             onEachFeature: (feature, layer) => {
                 activePowerCuts++; 
                 const props = feature.properties || {};
