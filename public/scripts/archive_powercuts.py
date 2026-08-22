@@ -12,7 +12,7 @@ from urllib.request import Request, urlopen
 # Default data sources and paths
 URL = "https://northernpowergrid.opendatasoft.com/api/explore/v2.1/catalog/datasets/live-power-cuts-data/exports/geojson?lang=en&timezone=Europe%2FLondon"
 FLOOD_URL = "https://environment.data.gov.uk/flood-monitoring/id/floods.json"
-REPO_ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
 ARCHIVE_PATH = REPO_ROOT / "public" / "data" / "powercut_archive.geojson"
 BOUNDARY_PATH = REPO_ROOT / "public" / "data" / "county_durham.geojson"
 
