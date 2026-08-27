@@ -1,479 +1,227 @@
-// Initialize Map centered on Durham area
 const map = L.map('map').setView([54.7761, -1.5733], 10);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors' }).addTo(map);
 
-// Add OpenStreetMap base tile layer
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-}).addTo(map);
-
-// Feature groups
 const boundaryGroup = L.featureGroup().addTo(map);
-const markerGroup = L.featureGroup().addTo(map);
-const csvMarkerGroup = L.featureGroup().addTo(map);
-const powerCutGroup = L.featureGroup().addTo(map); 
-
+const substationGroup = L.featureGroup().addTo(map);
+const powerCutGroup = L.featureGroup().addTo(map);
 const durhamGeoJsonPath = 'public/data/county_durham.geojson';
-const substationsGeoJsonPath = 'public/data/substation_sites_list.geojson';
-const substationsCsvPath = 'public/data/substation_sites_filtered.csv';
-const SUBSTATION_POPUP_WIDTH_WITH_CSV = 640;
-const substationPopupOptionsDefault = { maxWidth: 10000 };
-const powerCutPopupOptions = { 
-    maxWidth: 800, 
-    minWidth: 450,
-    className: 'powercut-popup-container' 
+const substationsGeoJsonPath = 'public/data/substation_sites_processed.geojson';
+const powerCutPopupOptions = { maxWidth: 800, minWidth: 450, className: 'powercut-popup-container' };
+let durhamBoundary;
+let processedSubstationsData;
+let currentWeights = { physical: 0.25, terrain: 0.25, vulnerability: 0.25, consequence: 0.25 };
+let riskSettings = {
+    poleMounted: 0.5,
+    groundMounted: 0.5,
+    lowThreshold: 0,
+    moderateThreshold: 0.75,
+    significantThreshold: 1.25,
+    extremeThreshold: 2.5,
+    climateIncrease: 0
 };
 
-let durhamBoundary; 
-
 function escapeHtml(value) {
-    return String(value)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/\"/g, '&quot;')
-        .replace(/'/g, '&#39;');
-}
-
-function parseCsvLine(line) {
-    const cells = [];
-    let current = '';
-    let inQuotes = false;
-
-    for (let i = 0; i < line.length; i++) {
-        const char = line[i];
-
-        if (char === '"') {
-            if (inQuotes && line[i + 1] === '"') {
-                current += '"';
-                i++;
-            } else {
-                inQuotes = !inQuotes;
-            }
-            continue;
-        }
-
-        if (char === ',' && !inQuotes) {
-            cells.push(current);
-            current = '';
-            continue;
-        }
-
-        current += char;
-    }
-
-    cells.push(current);
-    return cells;
-}
-
-function parseCsv(csvText) {
-    const lines = csvText
-        .split(/\r?\n/)
-        .map(line => line.trimEnd())
-        .filter(line => line.length > 0);
-
-    if (lines.length < 2) {
-        return { headers: [], rows: [] };
-    }
-
-    const headers = parseCsvLine(lines[0]);
-    const rows = lines.slice(1).map(line => {
-        const values = parseCsvLine(line);
-        const row = {};
-
-        headers.forEach((header, index) => {
-            row[header] = values[index] ?? '';
-        });
-
-        return row;
-    });
-
-    return { headers, rows };
-}
-
-function normalizeId(value) {
-    if (value === null || value === undefined || value === '') return '';
-    const raw = String(value).trim();
-
-    const numeric = Number(raw);
-    if (!Number.isNaN(numeric) && Number.isFinite(numeric)) {
-        return numeric.toFixed(0);
-    }
-
-    return raw;
-}
-
-function normalizeText(value) {
-    return String(value || '').trim().toLowerCase();
-}
-
-function buildCsvLookup(rows) {
-    const byId = new Map();
-    const byNamePostcode = new Map();
-
-    rows.forEach(row => {
-        const id = normalizeId(row.Substation_ID);
-        if (id) byId.set(id, row);
-
-        const siteName = normalizeText(row.Site_Name);
-        const postcode = normalizeText(row.Postcode);
-        if (siteName && postcode) {
-            byNamePostcode.set(`${siteName}|${postcode}`, row);
-        }
-    });
-
-    return { byId, byNamePostcode };
-}
-
-const CSV_POPUP_FIELDS = [
-    'slope',
-    'slope_dimensionless',
-    'class',
-    'mannings',
-    'df_class',
-    'rofrs_0_2m',
-    'rofrs_0_3m',
-    'rofrs_0_6m',
-    'rofrs_0_9m',
-    'rofrs_1_2m',
-    'rofsw_0_2m',
-    'rofsw_0_3m',
-    'rofsw_0_6m',
-    'rofsw_0_9m',
-    'rofsw_1_2m',
-    'rofrs_high',
-    'rofrs_med',
-    'rofrs_low',
-    'rofsw_high',
-    'rofsw_med',
-    'rofsw_low',
-    'rof_high',
-    'rof_med',
-    'rof_low',
-    'velocity_high',
-    'velocity_med',
-    'velocity_low',
-    'df_high',
-    'df_med',
-    'df_low',
-    'hazard_high',
-    'hazard_med',
-    'hazard_low',
-    'degree_high',
-    'degree_med',
-    'degree_low'
-];
-
-function getSubstationRiskMeta(csvRow) {
-    if (!csvRow) {
-        return {
-            label: 'Unclassified Risk',
-            color: '#0078d4',
-            background: 'rgba(0, 120, 212, 0.08)'
-        };
-    }
-
-    const highRiskScore = parseRiskScore(csvRow.rof_high);
-    const mediumRiskScore = parseRiskScore(csvRow.rof_med);
-    const lowRiskScore = parseRiskScore(csvRow.rof_low);
-
-    if (highRiskScore > 0) {
-        return {
-            label: 'High Risk',
-            color: '#d62828',
-            background: 'rgba(214, 40, 40, 0.08)'
-        };
-    }
-
-    if (mediumRiskScore > 0) {
-        return {
-            label: 'Medium Risk',
-            color: '#f77f00',
-            background: 'rgba(247, 127, 0, 0.1)'
-        };
-    }
-
-    if (lowRiskScore > 0) {
-        return {
-            label: 'Low Risk',
-            color: '#2a9d8f',
-            background: 'rgba(42, 157, 143, 0.1)'
-        };
-    }
-
-    return {
-        label: 'Unclassified Risk',
-        color: '#0078d4',
-        background: 'rgba(0, 120, 212, 0.08)'
-    };
-}
-
-function getSubstationMarkerColor(csvRow) {
-    return getSubstationRiskMeta(csvRow).color;
-}
-
-function formatCsvFieldLabel(fieldName) {
-    return fieldName.replace(/_/g, ' ');
-}
-
-function buildCsvDetailsHtml(csvRow) {
-    if (!csvRow) return '';
-
-    const riskMeta = getSubstationRiskMeta(csvRow);
-    const details = CSV_POPUP_FIELDS.map(field => {
-        const value = csvRow[field];
-        const displayValue = value === '' || value === undefined ? 'N/A' : value;
-        return `<div class="popup-csv-item"><b>${escapeHtml(formatCsvFieldLabel(field))}:</b> ${escapeHtml(displayValue)}</div>`;
-    }).join('');
-
-    return `
-        <div class="popup-csv-section" style="--risk-color: ${riskMeta.color}; --risk-background: ${riskMeta.background};">
-            <div class="popup-csv-title">${escapeHtml(riskMeta.label)}</div>
-            <div class="popup-csv-grid">
-                ${details}
-            </div>
-        </div>
-    `;
+    return String(value ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 function parseRiskScore(value) {
-    const num = Number(value);
-    return Number.isFinite(num) ? num : 0;
+    const number = Number(value);
+    return Number.isFinite(number) ? number : 0;
 }
 
-function getSubstationPopupOptions(hasCsvData) {
-    if (!hasCsvData) return substationPopupOptionsDefault;
+function getRiskMeta(score) {
+    if (score >= 0.75) return { label: 'High Risk', color: '#d62828', background: 'rgba(214, 40, 40, 0.08)' };
+    if (score >= 0.5) return { label: 'Medium Risk', color: '#f77f00', background: 'rgba(247, 127, 0, 0.1)' };
+    if (score > 0) return { label: 'Low Risk', color: '#2a9d8f', background: 'rgba(42, 157, 143, 0.1)' };
+    return { label: 'Unclassified Risk', color: '#0078d4', background: 'rgba(0, 120, 212, 0.08)' };
+}
 
+function getHazardMeta(score) {
+    if (score > riskSettings.extremeThreshold) return { label: 'Extreme', classValue: 4, norm: 1 };
+    if (score >= riskSettings.significantThreshold) return { label: 'Significant', classValue: 3, norm: 2 / 3 };
+    if (score >= riskSettings.moderateThreshold) return { label: 'Moderate', classValue: 2, norm: 1 / 3 };
+    if (score >= riskSettings.lowThreshold) return { label: 'Low', classValue: 1, norm: 0 };
+    return { label: null, classValue: null, norm: null };
+}
+
+function getVulnerabilityScore(props, tier) {
+    if (!Number.isFinite(Number(props[`hazard_${tier}`]))) return null;
+    const siteType = String(props.site_type || '').toLowerCase();
+    if (siteType.includes('pole')) return riskSettings.poleMounted;
+    if (siteType.includes('ground')) return riskSettings.groundMounted;
+    return 0;
+}
+
+function createSubstationIcon(score) {
+    const risk = getRiskMeta(score);
+    const isHighRisk = risk.label === 'High Risk';
+    const isMediumRisk = risk.label === 'Medium Risk';
+    const iconSize = isHighRisk ? 27 : isMediumRisk ? 16 : 18;
+    const shape = risk.label === 'High Risk'
+        ? '<path d="M12 1.5 L14.7 8.2 L21.8 8.2 L16.1 12.8 L18.7 19.5 L12 15.2 L5.3 19.5 L7.9 12.8 L2.2 8.2 L9.3 8.2 Z"/>'
+        : risk.label === 'Medium Risk'
+            ? '<path d="M12 3 L21 20 H3 Z"/>'
+            : '<circle cx="12" cy="12" r="4.25"/>';
+    return L.divIcon({ className: 'substation-marker-icon', html: `<svg viewBox="0 0 24 24" width="${iconSize}" height="${iconSize}" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><g fill="${risk.color}" stroke="#000000" stroke-width="1.5" stroke-linejoin="round">${shape}</g></svg>`, iconSize: [iconSize, iconSize], iconAnchor: [iconSize / 2, iconSize / 2], popupAnchor: [0, -iconSize / 2] });
+}
+
+function calculateWeightedScore(props, tier) {
+    const total = Object.values(currentWeights).reduce((sum, value) => sum + value, 0);
+    if (total === 0) return 0;
+    const score = currentWeights.physical * parseRiskScore(props[`degree_${tier}_norm`])
+        + currentWeights.terrain * parseRiskScore(props.combined_norm)
+        + currentWeights.vulnerability * parseRiskScore(props[`site_type_norm_${tier}`])
+        + currentWeights.consequence * parseRiskScore(props.customers_class_norm);
+    return Number((score / total).toFixed(4));
+}
+
+function calculateDerivedProperties(props, tier) {
+    const sourceHazard = props[`hazard_${tier}`];
+    if (sourceHazard === undefined || sourceHazard === null || sourceHazard === '') {
+        return {
+            [`degree_${tier}`]: null,
+            [`degree_${tier}_class`]: null,
+            [`degree_${tier}_norm`]: null,
+            [`site_type_norm_${tier}`]: null
+        };
+    }
+    const rawHazard = parseRiskScore(sourceHazard);
+    const climateMultiplier = 1 + Math.max(0, riskSettings.climateIncrease) / 100;
+    const adjustedHazard = rawHazard * climateMultiplier;
+    const hazard = getHazardMeta(adjustedHazard);
     return {
-        maxWidth: 680,
-        minWidth: 320,
-        className: 'popup-csv-scroll'
+        [`hazard_${tier}`]: Number(adjustedHazard.toFixed(3)),
+        [`degree_${tier}`]: hazard.label,
+        [`degree_${tier}_class`]: hazard.classValue,
+        [`degree_${tier}_norm`]: hazard.norm,
+        [`site_type_norm_${tier}`]: getVulnerabilityScore(props, tier)
     };
 }
 
-function createSubstationCsvIcon(fillColor, fillOpacity = 0.9) {
-    const starPath = 'M12 1.5 L14.7 8.2 L21.8 8.2 L16.1 12.8 L18.7 19.5 L12 15.2 L5.3 19.5 L7.9 12.8 L2.2 8.2 L9.3 8.2 Z';
+function buildWeightedGeoJson() {
+    return {
+        ...processedSubstationsData,
+        features: (processedSubstationsData.features || []).map(feature => {
+            const baseProps = feature.properties || {};
+            const derivedProps = ['high', 'med', 'low'].reduce((values, tier) => ({
+                ...values,
+                ...calculateDerivedProperties(baseProps, tier)
+            }), {});
+            const props = { ...baseProps, ...derivedProps };
+            return {
+                ...feature,
+                properties: {
+                    ...props,
+                    weighted_score_high: calculateWeightedScore(props, 'high'),
+                    weighted_score_med: calculateWeightedScore(props, 'med'),
+                    weighted_score_low: calculateWeightedScore(props, 'low')
+                }
+            };
+        })
+    };
+}
 
-    return L.divIcon({
-        className: 'substation-marker-csv-icon',
-        html: `
-            <svg viewBox="0 0 24 24" width="18" height="18" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
-                <path d="${starPath}" fill="${fillColor}" fill-opacity="${fillOpacity}" stroke="#000000" stroke-width="1.5" stroke-linejoin="round"/>
-            </svg>
-        `,
-        iconSize: [18, 18],
-        iconAnchor: [9, 9],
-        popupAnchor: [0, -8]
+function buildDetailsHtml(props) {
+    const risk = getRiskMeta(parseRiskScore(props.weighted_score_high));
+    const fields = ['slope', 'combined_norm', 'mannings', 'rof_high', 'rof_med', 'rof_low', 'hazard_high', 'hazard_med', 'hazard_low', 'degree_high', 'degree_med', 'degree_low', 'weighted_score_high', 'weighted_score_med', 'weighted_score_low'];
+    const details = fields.map(field => {
+        const value = props[field] === undefined || props[field] === '' ? 'N/A' : props[field];
+        return `<div class="popup-csv-item"><b>${escapeHtml(field.replace(/_/g, ' '))}:</b> ${escapeHtml(value)}</div>`;
+    }).join('');
+    return `<div class="popup-csv-section" style="--risk-color:${risk.color};--risk-background:${risk.background}"><div class="popup-csv-title">${risk.label}</div><div class="popup-csv-grid">${details}</div></div>`;
+}
+
+function renderSubstations() {
+    const weightedSubstationsData = buildWeightedGeoJson();
+    substationGroup.clearLayers();
+    let count = 0;
+    weightedSubstationsData.features.forEach(feature => {
+        const coords = feature.geometry?.coordinates;
+        if (!coords || coords.length < 2 || !turf.booleanPointInPolygon(feature, durhamBoundary)) return;
+        count++;
+        const props = feature.properties || {};
+        const highScore = parseRiskScore(props.weighted_score_high);
+        const marker = L.marker([coords[1], coords[0]], {
+            icon: createSubstationIcon(highScore),
+            zIndexOffset: highScore >= 0.75 ? 300 : highScore >= 0.5 ? 200 : 100
+        });
+        marker.bindPopup(`<div class="popup-content popup-substation"><h4>${escapeHtml(props.site_name || 'Unknown Substation')}</h4><div class="popup-substation-layout"><div class="popup-substation-main"><div><b>ID:</b> ${escapeHtml(props.substation_id || 'N/A')}</div><div><b>Type:</b> ${escapeHtml(props.site_type || 'N/A')}</div><div><b>Voltage:</b> ${escapeHtml(props.primary_voltage_kv || 'N/A')} kV / ${escapeHtml(props.secondary_voltage_kv || 'N/A')} kV</div><div><b>Rating:</b> ${escapeHtml(props.transformer_rating_kva || 'N/A')} kVA</div><div><b>Customers Fed:</b> ${escapeHtml(props.customer_numbers || 'N/A')}</div><div><b>Upstream:</b> ${escapeHtml(props.upstream_substation || 'N/A')}</div><div><b>Postcode:</b> ${escapeHtml(props.postcode || 'N/A')}</div></div>${buildDetailsHtml(props)}</div></div>`, { maxWidth: 680, minWidth: 320, className: 'popup-csv-scroll' });
+        substationGroup.addLayer(marker);
     });
+    const badge = document.querySelector('.badge-blue');
+    if (badge) badge.innerText = `${count} Substations Mapped`;
+}
+
+function setupWeightControls() {
+    document.querySelectorAll('#weight-controls input').forEach(input => input.addEventListener('input', event => {
+        const control = event.target.closest('.weight-control');
+        currentWeights[control.dataset.weight] = Number(event.target.value) / 100;
+        control.querySelector('output').innerText = `${event.target.value}%`;
+        renderSubstations();
+    }));
+
+    document.querySelectorAll('.risk-setting').forEach(input => input.addEventListener('input', event => {
+        const value = Number(event.target.value);
+        if (!Number.isFinite(value)) return;
+        riskSettings[event.target.dataset.setting] = value;
+        renderSubstations();
+    }));
+
+    const riskSettings = document.getElementById('risk-settings');
+    const settingsPanel = riskSettings?.querySelector('.settings-panel');
+    const positionSettingsPanel = () => {
+        if (!riskSettings?.open || !settingsPanel) return;
+        const buttonBounds = riskSettings.querySelector('summary').getBoundingClientRect();
+        settingsPanel.style.top = `${buttonBounds.bottom + 10}px`;
+    };
+    riskSettings?.addEventListener('toggle', positionSettingsPanel);
+    window.addEventListener('resize', positionSettingsPanel);
 }
 
 async function initMap() {
     try {
-        const boundaryResp = await fetch(durhamGeoJsonPath);
-        if (!boundaryResp.ok) throw new Error(`Missing ${durhamGeoJsonPath} (HTTP ${boundaryResp.status})`);
-
-        const substationsResp = await fetch(substationsGeoJsonPath);
-        if (!substationsResp.ok) throw new Error(`Missing ${substationsGeoJsonPath} (HTTP ${substationsResp.status})`);
-
-        const substationsCsvResp = await fetch(substationsCsvPath);
-        if (!substationsCsvResp.ok) throw new Error(`Missing ${substationsCsvPath} (HTTP ${substationsCsvResp.status})`);
-
-        const durhamData = await boundaryResp.json();
-        const substationsData = await substationsResp.json();
-        const csvData = parseCsv(await substationsCsvResp.text());
-        const csvLookup = buildCsvLookup(csvData.rows);
-
-        // Draw County Durham boundary on map
-        L.geoJSON(durhamData, {
-            style: {
-                color: '#68246d',
-                weight: 2.5,
-                fillColor: '#68246d',
-                fillOpacity: 0.08,
-                dashArray: '5, 5'
-            }
-        }).addTo(boundaryGroup);
-
-        durhamBoundary = durhamData.type === 'FeatureCollection' 
-            ? durhamData.features[0] 
-            : durhamData;
-
-        markerGroup.clearLayers();
-        csvMarkerGroup.clearLayers();
-        let count = 0;
-
-        const features = substationsData.features || [];
-
-        features.forEach(feature => {
-            const coords = feature.geometry && feature.geometry.coordinates;
-            if (!coords || coords.length < 2) return;
-
-            const [lon, lat] = coords; // GeoJSON coordinates are [longitude, latitude]
-
-            if (!isNaN(lat) && !isNaN(lon)) {
-                // Point-in-polygon check against County Durham boundary
-                const isInside = turf.booleanPointInPolygon(feature, durhamBoundary);
-
-                if (isInside) {
-                    count++;
-
-                    const props = feature.properties || {};
-                    const normalizedFeatureId = normalizeId(props.substation_id);
-                    const normalizedNamePostcode = `${normalizeText(props.site_name)}|${normalizeText(props.postcode)}`;
-                    const csvRow = csvLookup.byId.get(normalizedFeatureId) || csvLookup.byNamePostcode.get(normalizedNamePostcode);
-                    const csvDetailsHtml = buildCsvDetailsHtml(csvRow);
-                    const hasCsvData = Boolean(csvRow);
-                    const markerFillColor = getSubstationMarkerColor(csvRow);
-                    const markerFillOpacity = hasCsvData && markerFillColor === '#0078d4' ? 0.9 : 0.9;
-
-                    const circleMarker = hasCsvData ? null : L.circleMarker([lat, lon], {
-                        radius: 6,
-                        className: 'substation-marker',
-                        fillColor: markerFillColor,
-                        color: '#ffffff',
-                        weight: 1.5,
-                        fillOpacity: markerFillColor === '#0078d4' ? 0.1 : markerFillOpacity
-                    });
-
-                    const marker = hasCsvData ? L.marker([lat, lon], {
-                        icon: createSubstationCsvIcon(markerFillColor, markerFillOpacity)
-                    }) : null;
-
-                    // Substation Details Popup
-                    if (circleMarker) {
-                        circleMarker.bindPopup(`
-                            <div class="popup-content popup-substation">
-                                <h4>${props.site_name || 'Unknown Substation'}</h4>
-                                <div class="popup-substation-layout">
-                                    <div class="popup-substation-main">
-                                        <div><b>ID:</b> ${props.substation_id || 'N/A'}</div>
-                                        <div><b>Type:</b> ${props.site_type || 'N/A'}</div>
-                                        <div><b>Voltage:</b> ${props.primary_voltage_kv ?? 'N/A'} kV / ${props.secondary_voltage_kv ?? 'N/A'} kV</div>
-                                        <div><b>Rating:</b> ${props.transformer_rating_kva ?? 'N/A'} kVA</div>
-                                        <div><b>Customers Fed:</b> ${props.customer_numbers || 'N/A'}</div>
-                                        <div><b>Upstream:</b> ${props.upstream_substation || 'N/A'}</div>
-                                        <div><b>Postcode:</b> ${props.postcode || 'N/A'}</div>
-                                    </div>
-                                    ${csvDetailsHtml}
-                                </div>
-                            </div>
-                        `, getSubstationPopupOptions(hasCsvData));
-                    }
-
-                    if (marker) {
-                        marker.bindPopup(`
-                            <div class="popup-content popup-substation">
-                                <h4>${props.site_name || 'Unknown Substation'}</h4>
-                                <div class="popup-substation-layout">
-                                    <div class="popup-substation-main">
-                                        <div><b>ID:</b> ${props.substation_id || 'N/A'}</div>
-                                        <div><b>Type:</b> ${props.site_type || 'N/A'}</div>
-                                        <div><b>Voltage:</b> ${props.primary_voltage_kv ?? 'N/A'} kV / ${props.secondary_voltage_kv ?? 'N/A'} kV</div>
-                                        <div><b>Rating:</b> ${props.transformer_rating_kva ?? 'N/A'} kVA</div>
-                                        <div><b>Customers Fed:</b> ${props.customer_numbers || 'N/A'}</div>
-                                        <div><b>Upstream:</b> ${props.upstream_substation || 'N/A'}</div>
-                                        <div><b>Postcode:</b> ${props.postcode || 'N/A'}</div>
-                                    </div>
-                                    ${csvDetailsHtml}
-                                </div>
-                            </div>
-                        `, getSubstationPopupOptions(hasCsvData));
-                    }
-
-                    if (circleMarker) markerGroup.addLayer(circleMarker);
-                    if (marker) csvMarkerGroup.addLayer(marker);
-                }
-            }
-        });
-
-        // Update counter badge
-        const counterContainer = document.getElementById('counter');
-        counterContainer.className = 'badge-container'; 
-        counterContainer.innerHTML = `
-            <div id="powercut-counter" class="badge badge-black">0 Power Cuts</div>
-            <div class="badge badge-blue">${count} Substations Mapped</div>
-        `;
-
-        // Fit map view to County Durham boundary
-        if (boundaryGroup.getLayers().length > 0) {
-            map.fitBounds(boundaryGroup.getBounds().pad(0.05));
-        }
-
-        // Risk of Flooding from Surface Water Data added ontop of the map as a png
-        const surfaceWaterFloodLayer = L.tileLayer.wms(
-            'https://environment.data.gov.uk/spatialdata/nafra2-risk-of-flooding-from-surface-water/wms', 
-            {
-                layers: 'rofsw',
-                format: 'image/png',
-                transparent: true,
-                opacity: 0.8,
-                attribution: '&copy; Environment Agency',
-                
-                minZoom: 6,
-                maxZoom: 19,
-                maxNativeZoom: 15    // Stretches images at closer zoom levels
-            }
-        ).addTo(map); 
-
-        // Fetch live power cuts data, and then set interval
+        const boundaryResponse = await fetch(durhamGeoJsonPath);
+        const substationsResponse = await fetch(substationsGeoJsonPath);
+        if (!boundaryResponse.ok) throw new Error(`Missing ${durhamGeoJsonPath} (HTTP ${boundaryResponse.status})`);
+        if (!substationsResponse.ok) throw new Error(`Missing ${substationsGeoJsonPath} (HTTP ${substationsResponse.status})`);
+        const durhamData = await boundaryResponse.json();
+        processedSubstationsData = await substationsResponse.json();
+        L.geoJSON(durhamData, { style: { color: '#68246d', weight: 2.5, fillColor: '#68246d', fillOpacity: 0.08, dashArray: '5, 5' } }).addTo(boundaryGroup);
+        durhamBoundary = durhamData.type === 'FeatureCollection' ? durhamData.features[0] : durhamData;
+        document.getElementById('counter').className = 'badge-container';
+        document.getElementById('counter').innerHTML = '<div id="powercut-counter" class="badge badge-black">0 Power Cuts</div><div class="badge badge-blue">0 Substations Mapped</div>';
+        setupWeightControls();
+        renderSubstations();
+        if (boundaryGroup.getLayers().length > 0) map.fitBounds(boundaryGroup.getBounds().pad(0.05));
+        L.tileLayer.wms('https://environment.data.gov.uk/spatialdata/nafra2-risk-of-flooding-from-surface-water/wms', {
+            layers: 'rofsw',
+            format: 'image/png',
+            transparent: true,
+            opacity: 0.8,
+            attribution: '&copy; Environment Agency',
+            minZoom: 6,
+            maxZoom: 19,
+            maxNativeZoom: 15
+        }).addTo(map);
         await fetchLivePowerCuts();
-        setInterval(fetchLivePowerCuts, 300000); // every 5 minutes
-
-    } catch (err) {
-        console.error("Map setup failed:", err);
-        document.getElementById('counter').innerText = err.message;
+        setInterval(fetchLivePowerCuts, 300000);
+    } catch (error) {
+        console.error('Map setup failed:', error);
+        document.getElementById('counter').innerText = error.message;
     }
 }
 
 async function fetchLivePowerCuts() {
     try {
-        const url = 'https://northernpowergrid.opendatasoft.com/api/explore/v2.1/catalog/datasets/live-power-cuts-data/exports/geojson?lang=en&timezone=Europe%2FLondon';
-        const response = await fetch(url);
+        const response = await fetch('https://northernpowergrid.opendatasoft.com/api/explore/v2.1/catalog/datasets/live-power-cuts-data/exports/geojson?lang=en&timezone=Europe%2FLondon');
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-        const data = await response.json();
         powerCutGroup.clearLayers();
         let activePowerCuts = 0;
-
-        const livePowerCutIcon = L.divIcon({
-            className: 'live-power-cut-icon-wrapper',
-            html: `
-                <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
-                    <path d="M13 2L4 13h5l-1 9 9-11h-5l1-9z" fill="#ffd700" stroke="#daa000" stroke-width="1.5" stroke-linejoin="round"/>
-                </svg>
-            `,
-            iconSize: [22, 22],
-            iconAnchor: [11, 18],
-            popupAnchor: [0, -16]
-        });
-
-        L.geoJSON(data, {
-            filter: feature => feature.geometry?.coordinates && turf.booleanPointInPolygon(feature, durhamBoundary),
-            pointToLayer: (feature, latlng) => L.marker(latlng, { icon: livePowerCutIcon }),
-            onEachFeature: (feature, layer) => {
-                activePowerCuts++; 
-                const props = feature.properties || {};
-                const postcodes = Array.isArray(props.postcode) ? props.postcode.join(', ') : (props.postcode || 'N/A');
-                
-                // Power Cut Details Popup
-                layer.bindPopup(`
-                    <div class="popup-content popup-powercut">
-                        <h4>Live Power Cut</h4>
-                        <div class="pc-row"><b>Reference: </b> ${props.reference || 'N/A'}</div>
-                        <div class="pc-row"><b>Type: </b> ${props.type || 'N/A'}</div>
-                        <div class="pc-row"><b>Status: </b> ${props.natureofoutage || 'Information unavailable'}</div>
-                        <div class="pc-row"><b>Affected Postcodes: </b> ${postcodes}</div>
-                    </div>
-                `, powerCutPopupOptions);
-            }
-        }).addTo(powerCutGroup);
-
-        const pcCounter = document.getElementById('powercut-counter');
-        if (pcCounter) pcCounter.innerText = `${activePowerCuts} Power Cuts`;
-
-    } catch (err) {
-        console.error("Failed to load live power cut data:", err);
-    }
+        const icon = L.divIcon({ className: 'live-power-cut-icon-wrapper', html: '<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M13 2L4 13h5l-1 9 9-11h-5l1-9z" fill="#ffd700" stroke="#daa000" stroke-width="1.5" stroke-linejoin="round"/></svg>', iconSize: [22, 22], iconAnchor: [11, 18], popupAnchor: [0, -16] });
+        L.geoJSON(await response.json(), { filter: feature => feature.geometry?.coordinates && turf.booleanPointInPolygon(feature, durhamBoundary), pointToLayer: (feature, latlng) => L.marker(latlng, { icon, zIndexOffset: 400 }), onEachFeature: (feature, layer) => { activePowerCuts++; const props = feature.properties || {}; const postcodes = Array.isArray(props.postcode) ? props.postcode.join(', ') : (props.postcode || 'N/A'); layer.bindPopup(`<div class="popup-content popup-powercut"><h4>Live Power Cut</h4><div class="pc-row"><b>Reference: </b>${escapeHtml(props.reference || 'N/A')}</div><div class="pc-row"><b>Type: </b>${escapeHtml(props.type || 'N/A')}</div><div class="pc-row"><b>Status: </b>${escapeHtml(props.natureofoutage || 'Information unavailable')}</div><div class="pc-row"><b>Affected Postcodes: </b>${escapeHtml(postcodes)}</div></div>`, powerCutPopupOptions); } }).addTo(powerCutGroup);
+        const counter = document.getElementById('powercut-counter');
+        if (counter) counter.innerText = `${activePowerCuts} Power Cuts`;
+    } catch (error) { console.error('Failed to load live power cut data:', error); }
 }
 
 initMap();
