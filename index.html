@@ -18,6 +18,10 @@
     <header id="header">
         <h3 class="title">Northern Powergrid Substations in County Durham</h3>
         <div id="header-actions">
+        <button id="recenter-map" type="button" aria-label="Recenter map on Durham" title="Recenter map on Durham">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="7.5"></circle><path d="M12 1.5v4M12 18.5v4M1.5 12h4M18.5 12h4"></path></svg>
+        </button>
+        <button id="classified-toggle" type="button" aria-pressed="false">Classified only</button>
         <details id="risk-settings">
             <summary>Settings</summary>
             <div class="settings-panel">
@@ -60,7 +64,7 @@
                 </fieldset>
             </div>
         </details>
-        <span id="counter" class="badge">Loading Map...</span>
+        <span id="counter" class="badge-container">Loading Map...</span>
         </div>
     </header>
 

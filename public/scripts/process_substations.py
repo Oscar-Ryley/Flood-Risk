@@ -567,48 +567,33 @@ def process_substation_data(
             )
 
         gdf[f"scores_{tier}"] = gdf.apply(calc_score, axis=1)
+        
+    print("      --> Computing Final Combined Tier Score...")
+    def calc_combined_risk(row):
+        s_low = row.get("scores_low")
+        s_med = row.get("scores_med")
+        s_high = row.get("scores_high")
+        
+        # If the asset has no exposure at ANY tier, return None so it is entirely excluded
+        if pd.isnull(s_low) and pd.isnull(s_med) and pd.isnull(s_high):
+            return None
+            
+        # Treat unexposed tiers as 0 risk for mathematical combining
+        val_low = float(s_low) if pd.notnull(s_low) else 0.0
+        val_med = float(s_med) if pd.notnull(s_med) else 0.0
+        val_high = float(s_high) if pd.notnull(s_high) else 0.0
+        
+        w_low, w_med, w_high = 0.55, 1.5, 3.3
+        total_weight = w_low + w_med + w_high
+        
+        # Calculate Weighted Average
+        combined = ((val_low * w_low) + (val_med * w_med) + (val_high * w_high)) / total_weight
+        return round(combined, 4)
+        
+    # Apply the combining function to create the new column
+    gdf["final_risk_score"] = gdf.apply(calc_combined_risk, axis=1)
 
-    # export GeoJSON
-    generated_columns = [
-        "elevation_m",
-        "slope",
-        "slope_dimensionless",
-        "twi",
-        "spi",
-        "twi_class",
-        "twi_class_norm",
-        "spi_class",
-        "spi_class_norm",
-        "combined_norm",
-        "mannings",
-        "df_class",
-        "customers_class",
-        "customers_class_norm",
-    ]
-
-    for tier in TIERS:
-        generated_columns.extend([
-            f"rof_{tier}",
-            f"rofsw_{tier}",
-            f"rofrs_{tier}",
-            f"velocity_{tier}",
-            f"df_{tier}",
-            f"hazard_{tier}",
-            f"degree_{tier}",
-            f"degree_{tier}_class",
-            f"degree_{tier}_norm",
-            f"site_type_class_{tier}",
-            f"site_type_norm_{tier}",
-            f"scores_{tier}",
-        ])
-
-    flood_columns = [
-        column for column in gdf.columns
-        if column.startswith(("rofsw_", "rofrs_", "rof_"))
-    ]
-    generated_columns.extend(flood_columns)
-    generated_columns = list(dict.fromkeys(generated_columns))
-
+    # Clean up column duplicates and prepare export
     gdf = gdf.loc[:, ~gdf.columns.duplicated()].copy()
     keep_columns = [
         column for column in gdf.columns
