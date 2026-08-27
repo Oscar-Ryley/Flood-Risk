@@ -18,7 +18,7 @@
 ## Live Site - [powergrid.oryley.com](https://powergrid.oryley.com)
 
 [![Live Site Screenshot](public/data/images/screenshot.png)](https://powergrid.oryley.com)
-*Map of Substations in County Durham Case Study, Risk Levels Classified as High (red star), Medium (orange triangle), Low (Green circle), and Unclassified (Blue circle); as well as Live Power Cuts (Yellow Lightning Bolt).*
+*Map of Substations in County Durham Case Study, Risk Levels Classified as High (red star), Medium (orange triangle), Low (Green circle). Not pictured but available visualisations: Not at Risk substations (Blue circles), Live Power Cuts (Black Lightning Bolts).*
 
 ## Data
 
