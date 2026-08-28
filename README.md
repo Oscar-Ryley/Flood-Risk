@@ -15,9 +15,9 @@
 [santana]: https://www.durham.ac.uk/staff/misael-alpizar-santana/
 
 
-## Live Site - [powergrid.oryley.com](https://powergrid.oryley.com)
+## Live Site - [floodrisk.oryley.com](https://floodrisk.oryley.com)
 
-[![Live Site Screenshot](public/data/images/screenshot.png)](https://powergrid.oryley.com)
+[![Live Site Screenshot](public/data/images/screenshot.png)](https://floodrisk.oryley.com)
 *Map of Substations in County Durham Case Study, Risk Levels Classified as High (red star), Medium (orange triangle), Low (Green circle). Not pictured but available visualisations: Not at Risk substations (Blue circles), Live Power Cuts (Black Lightning Bolts).*
 
 ## Data
@@ -50,7 +50,7 @@ public/data/
 - `county_durham.geojson`: [MapIt Durham County Council Area - ID 2223](https://mapit.mysociety.org/area/2223.geojson) <i>(renamed from `2223.geojson`)</i>
 - `powercut_archive.geojson`: Updated every 30 minutes by a GitHub Action that calls Northern Powergrid's [OpenDataSoft API](https://northernpowergrid.opendatasoft.com/explore/dataset/live-power-cuts-data/information/) and flood warnings from [the Environment Agency](https://environment.data.gov.uk/flood-monitoring/id/floods). Each run appends a new line, which is a timestamped GeoJSON snapshot.
 - `substation_sites_list.geojson`: List of all substations with data points [Northern Power Grid Open Data](https://northernpowergrid.opendatasoft.com/explore/dataset/substation_sites_list/export/?disjunctive.dno_area)
-- `substation_sites_filtered.geojson`: Generated based on the other data sources by the python file `scripts\archive_powercuts.py`. Used on [the live site](https://powergrid.oryley.com).
+- `substation_sites_filtered.geojson`: Generated based on the other data sources by the python file `scripts\archive_powercuts.py`. Used on [the live site](https://floodrisk.oryley.com).
 - `substation_sites_all.csv`: Full Microsoft Excel csv export of data process during the project.
 
 
@@ -68,7 +68,7 @@ The following data is not tracked in git and must be downloaded and placed in `p
 
 ### 🧪 Reproducibility
 
-- Live site is currently available at [powergrid.oryley.com](https://powergrid.oryley.com)
+- Live site is currently available at [floodrisk.oryley.com](https://floodrisk.oryley.com)
 - Static Data downloads can be found in [Directory Structure](#-directory-structure), including some data not tracked in git.
 - A GitHub Actions workflow is archiving live Northern Power Grid power cut data, with flood warnings, to the repository. To create snapshots locally, run `scripts/archive_powercuts.py` and it will update `data/powercut_archive.geojson`
 - To use this visualisation locally, clone this repository, and run using a local test server
