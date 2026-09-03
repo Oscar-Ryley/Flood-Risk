@@ -74,10 +74,10 @@ UKCEH_MAPPING = {
 }
 
 DEFAULT_WEIGHTS = {
-    "physical": 0.25,
-    "terrain": 0.25,
-    "vulnerability": 0.25,
-    "consequence": 0.25,
+    "physical": 0.33,
+    "terrain": 0.33,
+    "vulnerability": 0.0,
+    "consequence": 0.34,
 }
 
 TIERS = ["high", "med", "low"]
@@ -85,7 +85,6 @@ FLOOD_DEPTHS = (0.2, 0.3, 0.6, 0.9, 1.2)
 
 
 def load_raw_flood_depths(gdf: gpd.GeoDataFrame, data_dir: str | Path) -> gpd.GeoDataFrame:
-    """Sample each raw flood-depth polygon layer at substation points and extract EA likelihoods."""
     data_dir = Path(data_dir)
     result = gdf.copy()
 
@@ -433,6 +432,14 @@ def process_substation_data(
     if weights is None:
         weights = DEFAULT_WEIGHTS
 
+    weights = {name: float(value) for name, value in weights.items()}
+    if set(weights) != set(DEFAULT_WEIGHTS) or any(value < 0 or not np.isfinite(value) for value in weights.values()):
+        raise ValueError("Risk weights must contain four finite, non-negative components.")
+    weight_total = sum(weights.values())
+    if weight_total <= 0:
+        raise ValueError("At least one risk weight must be greater than zero.")
+    weights = {name: value / weight_total for name, value in weights.items()}
+
     gdf = load_and_filter_substations(geometry_path, boundary_geojson_path)
     gdf = sample_dtm_windowed(gdf, dtm_tif_path)
 
@@ -499,7 +506,6 @@ def process_substation_data(
             column = f"{prefix}_{tier}"
             if column not in gdf:
                 gdf[column] = np.nan
-            gdf[column] = pd.to_numeric(gdf[column], errors="coerce")
 
         rof_column = f"rof_{tier}"
         gdf[rof_column] = gdf[[f"rofrs_{tier}", f"rofsw_{tier}"]].max(axis=1)
@@ -592,6 +598,20 @@ def process_substation_data(
         
     # Apply the combining function to create the new column
     gdf["final_risk_score"] = gdf.apply(calc_combined_risk, axis=1)
+
+    exposure_counts = [gdf[f"rof_{tier}"].notna().sum() for tier in ("high", "med", "low")]
+    if not (exposure_counts[0] <= exposure_counts[1] <= exposure_counts[2]):
+        raise ValueError(
+            "Exposure validation failed: high, medium, and low counts must be non-decreasing."
+        )
+
+    score_columns = [f"scores_{tier}" for tier in TIERS] + ["final_risk_score"]
+    for column in score_columns:
+        values = pd.to_numeric(gdf[column], errors="coerce")
+        invalid = gdf[column].notna() & values.isna()
+        out_of_range = values.notna() & ((values < 0) | (values > 1))
+        if invalid.any() or out_of_range.any():
+            raise ValueError(f"Score validation failed for {column}: non-numeric or out-of-range values found.")
 
     # Clean up column duplicates and prepare export
     gdf = gdf.loc[:, ~gdf.columns.duplicated()].copy()

@@ -10,7 +10,7 @@ const powerCutPopupOptions = { maxWidth: 800, minWidth: 450, className: 'powercu
 const originalDurhamView = { center: [54.6949868501283, -1.7758302950742813], zoom: 10 };
 let durhamBoundary;
 let processedSubstationsData;
-let currentWeights = { physical: 0.25, terrain: 0.25, vulnerability: 0.25, consequence: 0.25 };
+let currentWeights = { physical: 0.33, terrain: 0.33, vulnerability: 0, consequence: 0.34 };
 let riskSettings = {
     poleMounted: 0.5,
     groundMounted: 0.5,
@@ -94,7 +94,7 @@ function calculateWeightedScore(props, tier) {
 }
 
 function calculateCombinedWeightedScore(props) {
-    const tierWeights = { low: 1, med: 1.5, high: 3.3 };
+    const tierWeights = { low: 0.55, med: 1.5, high: 3.3 };
     let weightedTotal = 0;
     let totalWeight = 0;
     Object.entries(tierWeights).forEach(([tier, tierWeight]) => {
