@@ -1,0 +1,18 @@
+BASELINE TOP 10 SUBSTATIONS
+     Substation Name  Baseline_Rank  Hazard_Dominant_Rank  Terrain_Dominant_Rank  Vulnerability_Dominant_Rank  Consequence_Dominant_Rank
+       DURHAM SUTTON              1                     1                      2                            1                          1
+   LANGLEY PARK WEST              2                    10                      9                            5                          2
+      BLACKHALL EAST              3                    14                     16                           12                          3
+     SHINCLIFFE WEST              4                    11                      4                            6                          6
+     NEW ELVET NORTH              5                     2                      1                            2                          8
+               ELVET              6                     3                      7                            3                          9
+     ETHERLEY LEAZES              6                     5                     20                           15                         14
+               YODEN              6                     3                      7                            3                          9
+      LITTLE NEWSHAM              7                     5                      2                           15                         20
+FREEMANS REACH SOUTH              8                    12                      6                            7                         13
+
+SPEARMAN RANK CORRELATIONS
+Baseline vs Hazard_Dominant: 0.926
+Baseline vs Terrain_Dominant: 0.979
+Baseline vs Vulnerability_Dominant: 0.966
+Baseline vs Consequence_Dominant: 0.918
