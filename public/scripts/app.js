@@ -159,7 +159,7 @@ function buildWeightedGeoJson() {
 }
 
 function buildDetailsHtml(props) {
-    const risk = getRiskMeta(props.map_weighted_score);
+    const risk = getRiskMeta(props.final_risk_score);
     const fields = ['final_risk_score', 'map_weighted_score', 'slope', 'combined_norm', 'mannings', 'rof_high', 'rof_med', 'rof_low', 'hazard_high', 'hazard_med', 'hazard_low', 'degree_high', 'degree_med', 'degree_low', 'weighted_score_high', 'weighted_score_med', 'weighted_score_low'];
     const details = fields.map(field => {
         const value = props[field] === undefined || props[field] === '' ? 'N/A' : props[field];
@@ -176,8 +176,8 @@ function renderSubstations() {
         const coords = feature.geometry?.coordinates;
         if (!coords || coords.length < 2 || !turf.booleanPointInPolygon(feature, durhamBoundary)) return;
         const props = feature.properties || {};
-        const hasMapScore = props.map_weighted_score !== null && props.map_weighted_score !== undefined && props.map_weighted_score !== '';
-        const visualScore = hasMapScore && Number.isFinite(Number(props.map_weighted_score)) ? Number(props.map_weighted_score) : null;
+        const hasFinalScore = props.final_risk_score !== null && props.final_risk_score !== undefined && props.final_risk_score !== '';
+        const visualScore = hasFinalScore && Number.isFinite(Number(props.final_risk_score)) ? Number(props.final_risk_score) : null;
         if (showClassifiedOnly && visualScore === null) return;
         count++;
         const marker = L.marker([coords[1], coords[0]], {
