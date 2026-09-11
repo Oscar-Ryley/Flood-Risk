@@ -28,6 +28,13 @@ body {
     font-weight: 600;
 }
 
+#header-links {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-left: 16px;
+}
+
 #header-actions {
     display: flex;
     align-items: center;
@@ -79,6 +86,38 @@ body {
 #classified-toggle[aria-pressed="true"] {
     color: #68246d;
     background: #ffffff;
+}
+
+.header-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 34px;
+    padding: 7px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.65);
+    border-radius: 4px;
+    color: #ffffff;
+    background: transparent;
+    font-size: 12px;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.header-link:hover,
+.header-link:focus-visible {
+    color: #68246d;
+    background: #ffffff;
+}
+
+.github-link {
+    width: 34px;
+    padding: 6px;
+}
+
+.github-link svg {
+    width: 19px;
+    height: 19px;
+    fill: currentColor;
 }
 
 #weight-controls {
