@@ -1,8 +1,8 @@
 name: Archive Live Power Cuts from Northern Power Grid
 
 on:
-  schedule:
-    - cron: '0,30 * * * *'
+# schedule:
+  #   - cron: '0,30 * * * *'
   workflow_dispatch:
 
 permissions:
